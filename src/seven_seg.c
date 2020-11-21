@@ -67,9 +67,9 @@ static struct class *seven_seg_class;
 
 void set_to_screen(char *c) {
     int val = digit_bitmap[*c - 48];
-    for (int seg = segA; seg <= segG; ++seg) {
-        gpio = seg;
-        gpio_set_value(gpio, low);
+    int pins_len = sizeof pins / sizeof *pins;
+    for (int i = 0; i < pins_len; ++seg) {
+        gpio_set_value(pins[i], low);
     }
     int masks_len = sizeof masks / sizeof *masks;
     for (int i = 0; i < masks_len; ++i) {
