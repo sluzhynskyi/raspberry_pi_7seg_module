@@ -19,6 +19,7 @@
 #define DEVICE_NAME "gpio_lkm" /* name that will be assigned to this device in /dev fs */
 #define BUF_SIZE 512
 #define NUM_COM 4 /* number of commands that this driver support */
+#define SEGMENT_NUM     7
 
 /* buffer with set of supported commands */
 const char * commands[NUM_COM] = {"out", "in", "low", "high"};
@@ -315,6 +316,9 @@ static ssize_t gpio_lkm_write ( struct file *filp, const char *buf, size_t count
     return count;
 }
 
+EXPORT_SYMBOL(gpio_lkm_write);
+EXPORT_SYMBOL(gpio_lkm_read);
+
 /*
 * gpio_lkm_init - Initialize GPIO device driver
 * this function is called each time you call
@@ -501,6 +505,43 @@ static void __exit gpio_lkm_exit(void)
     printk(KERN_INFO "[GPIO_LKM] - Raspberry Pi GPIO driver removed\n");
 }
 
+const int segment_pins[] = {
+        2, // segA
+        3, // segB
+        4, // segC
+        17, // segD
+        27, // segE
+        22, // segF
+        10, // segG
+};
+
+const int masks[] = {
+//      A     B     C     D     E     F     G
+        0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
+};
+const int digit_bitmap[] = {
+//      0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
+        0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x67, 0x77, 0x7C, 0x39, 0x5E, 0x79, 0x71,
+};
+
+void set_to_screen(char c[]) {
+
+    int i, masks_len;
+    int val = digit_bitmap[c[0]-48];
+    for (i = 0; i < SEGMENT_NUM; ++i) {
+        gpio_set_value(segment_pins[i], 0);
+    }
+    masks_len = sizeof masks / sizeof *masks;
+    for ( i = 0; i < masks_len; ++i) {
+        if ((masks[i] & val) == masks[i]) {
+            printk(KERN_INFO "[SEVEN_SEG] pulling HIGH pin no.%d\n", i);
+            gpio_set_value(segment_pins[i], 1);
+        }
+    }
+}
+
+EXPORT_SYMBOL(set_to_screen);
+
 /* these are stantard macros to mark
  * init and exit functions implemetations
  */
@@ -508,5 +549,5 @@ module_init(gpio_lkm_init);
 module_exit(gpio_lkm_exit);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Roman Okhrimenko <mrromanjoe@gmail.com>");
+MODULE_AUTHOR("Marian Dubei, Danylo Sluzhynskyi, Taras Rumezhak");
 MODULE_DESCRIPTION("GPIO Loadable Kernel Module - Linux device driver for Raspberry Pi");

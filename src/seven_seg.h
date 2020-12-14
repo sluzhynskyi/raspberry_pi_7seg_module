@@ -1,0 +1,1 @@
+extern void set_to_screen(char c[]);
